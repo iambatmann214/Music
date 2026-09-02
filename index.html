@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<title>Midnight Sonic — Offline Music</title>
+<meta name="description" content="Midnight Sonic: a premium offline local music player. Your library, your device, no internet required." />
+
+<!-- PWA -->
+<meta name="theme-color" content="#0A0F1E" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Sonic" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
+
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<audio id="main-audio" preload="metadata"></audio>
+
+<div id="app">
+
+  <main id="screen-container">
+
+    <!-- ============ HOME ============ -->
+    <section class="screen active" id="screen-home" data-screen="home">
+      <header class="topbar glass">
+        <h1 class="brand">Midnight <span>Sonic</span></h1>
+        <div class="topbar-actions">
+          <button class="icon-btn ic-search" data-nav="library" data-action="open-search" aria-label="Search"></button>
+          <button class="icon-btn ic-tune" data-nav="settings" aria-label="Settings"></button>
+        </div>
+      </header>
+
+      <div class="screen-content">
+        <h2 class="greeting" id="home-greeting">Good evening</h2>
+
+        <div id="home-empty" class="empty-state hidden">
+          <div class="empty-art"></div>
+          <h3>Your library is empty</h3>
+          <p>Import songs from your phone to build your permanent offline library. Once added, they stay here — even after you close the app.</p>
+          <button class="btn btn-primary" data-action="import">Import Music</button>
+        </div>
+
+        <div id="home-content" class="hidden">
+          <section class="home-row" id="home-continue-row">
+            <h3 class="row-title">Continue Listening</h3>
+            <div class="hcards" id="home-continue"></div>
+          </section>
+
+          <section class="home-row" id="home-recent-row">
+            <h3 class="row-title">Recently Played</h3>
+            <div class="hcards" id="home-recent"></div>
+          </section>
+
+          <section class="home-row">
+            <h3 class="row-title">Quick Playlists</h3>
+            <div class="quick-grid" id="home-quick-playlists"></div>
+          </section>
+
+          <section class="home-row" id="home-added-row">
+            <h3 class="row-title">Recently Added</h3>
+            <div class="hcards" id="home-added"></div>
+          </section>
+
+          <section class="home-row" id="home-most-row">
+            <h3 class="row-title">Most Played</h3>
+            <div class="hcards" id="home-most"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LIBRARY ============ -->
+    <section class="screen" id="screen-library" data-screen="library">
+      <header class="topbar glass">
+        <h1 class="screen-title">My Library</h1>
+        <button class="icon-btn ic-search" id="library-search-btn" aria-label="Search"></button>
+      </header>
+
+      <div class="screen-content">
+        <div class="search-bar hidden" id="library-search-bar">
+          <span class="search-icon ic-search-static"></span>
+          <input type="text" id="library-search-input" placeholder="Search title, artist, album, genre" autocomplete="off" />
+          <button class="icon-btn small ic-close" id="library-search-clear" aria-label="Clear search"></button>
+        </div>
+
+        <button class="import-btn" data-action="import">
+          <span class="icon-btn-icon ic-upload-static"></span>
+          <span>Import Music</span>
+        </button>
+
+        <div class="tabs" id="library-tabs">
+          <button class="tab active" data-tab="songs">Songs</button>
+          <button class="tab" data-tab="albums">Albums</button>
+          <button class="tab" data-tab="artists">Artists</button>
+          <button class="tab" data-tab="genres">Genres</button>
+          <button class="tab" data-tab="favorites">Liked</button>
+        </div>
+
+        <div class="sort-row" id="library-sort-row">
+          <span class="sort-label">Sort</span>
+          <select id="library-sort-select">
+            <option value="dateAdded-desc">Recently added</option>
+            <option value="lastPlayed-desc">Recently played</option>
+            <option value="title-asc">Title (A–Z)</option>
+            <option value="artist-asc">Artist (A–Z)</option>
+            <option value="album-asc">Album (A–Z)</option>
+            <option value="duration-desc">Duration</option>
+          </select>
+          <span class="song-count" id="library-count"></span>
+        </div>
+
+        <div id="library-list-wrap">
+          <div class="song-list" id="library-list"></div>
+          <div class="grid-list hidden" id="library-grid"></div>
+        </div>
+
+        <div class="empty-state small hidden" id="library-empty">
+          <div class="empty-art"></div>
+          <h3>Nothing here yet</h3>
+          <p>Import audio files from your device to get started.</p>
+          <button class="btn btn-primary" data-action="import">Import Music</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ALBUM / ARTIST / GENRE DETAIL ============ -->
+    <section class="screen" id="screen-collection" data-screen="collection">
+      <header class="topbar glass">
+        <button class="icon-btn back-btn" data-nav="library" aria-label="Back"></button>
+        <h1 class="screen-title" id="collection-title">Collection</h1>
+        <span></span>
+      </header>
+      <div class="screen-content">
+        <div class="collection-hero">
+          <div class="collection-art" id="collection-art"></div>
+          <p class="collection-meta" id="collection-meta"></p>
+          <div class="collection-actions">
+            <button class="btn btn-primary btn-pill" id="collection-play-btn">Play</button>
+            <button class="btn btn-ghost btn-pill" id="collection-shuffle-btn">Shuffle</button>
+          </div>
+        </div>
+        <div class="song-list" id="collection-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ PLAYLISTS ============ -->
+    <section class="screen" id="screen-playlists" data-screen="playlists">
+      <header class="topbar glass">
+        <h1 class="screen-title">Playlists</h1>
+        <button class="icon-btn ic-add" id="new-playlist-btn" aria-label="New playlist"></button>
+      </header>
+      <div class="screen-content">
+        <div class="playlist-grid" id="playlist-grid"></div>
+      </div>
+    </section>
+
+    <!-- ============ PLAYLIST DETAIL ============ -->
+    <section class="screen" id="screen-playlist-detail" data-screen="playlist-detail">
+      <header class="topbar glass">
+        <button class="icon-btn back-btn" data-nav="playlists" aria-label="Back"></button>
+        <h1 class="screen-title" id="playlist-detail-title">Playlist</h1>
+        <button class="icon-btn ic-more" id="playlist-detail-menu-btn" aria-label="More"></button>
+      </header>
+      <div class="screen-content">
+        <p class="collection-meta" id="playlist-detail-meta"></p>
+        <div class="collection-actions">
+          <button class="btn btn-primary btn-pill" id="playlist-play-btn">Play</button>
+          <button class="btn btn-ghost btn-pill" id="playlist-shuffle-btn">Shuffle</button>
+        </div>
+        <div class="song-list" id="playlist-detail-list"></div>
+        <div class="empty-state small hidden" id="playlist-detail-empty">
+          <p>No songs in this playlist yet. Add some from your library.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SETTINGS / AUDIO ============ -->
+    <section class="screen" id="screen-settings" data-screen="settings">
+      <header class="topbar glass">
+        <button class="icon-btn back-btn" data-nav="home" aria-label="Back"></button>
+        <h1 class="screen-title">Audio &amp; Storage</h1>
+        <span></span>
+      </header>
+      <div class="screen-content">
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Equalizer</h3>
+            <select id="eq-preset-select"></select>
+          </div>
+          <div class="eq-bars" id="eq-bars">
+            <div class="eq-row"><span>Bass</span><input type="range" id="eq-bass" min="-12" max="12" step="1" value="0" /><span id="eq-bass-val">0dB</span></div>
+            <div class="eq-row"><span>Treble</span><input type="range" id="eq-treble" min="-12" max="12" step="1" value="0" /><span id="eq-treble-val">0dB</span></div>
+          </div>
+          <p class="hint" id="eq-unsupported-hint">Equalizer unavailable — your browser doesn't support Web Audio EQ.</p>
+        </div>
+
+        <div class="panel">
+          <div class="setting-row">
+            <span>Playback speed</span>
+            <select id="speed-select">
+              <option value="0.75">0.75×</option>
+              <option value="1" selected>1×</option>
+              <option value="1.25">1.25×</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <span>Volume</span>
+            <input type="range" id="settings-volume" min="0" max="1" step="0.01" value="1" />
+          </div>
+          <button class="btn btn-ghost" id="reset-audio-btn">Reset to defaults</button>
+        </div>
+
+        <div class="panel">
+          <h3>Storage</h3>
+          <div class="stat-row"><span>Songs</span><strong id="stat-songs">0</strong></div>
+          <div class="stat-row"><span>Playlists</span><strong id="stat-playlists">0</strong></div>
+          <div class="stat-row"><span>Library size</span><strong id="stat-size">0 MB</strong></div>
+          <div class="stat-row"><span>Device storage used</span><strong id="stat-quota">—</strong></div>
+          <button class="btn btn-ghost" id="clear-recent-btn">Clear recently played</button>
+          <button class="btn btn-danger" id="clear-all-btn">Clear all music</button>
+        </div>
+
+        <div class="panel">
+          <h3>Install</h3>
+          <p class="hint">Add Midnight Sonic to your home screen to use it like an installed app.</p>
+          <button class="btn btn-primary" id="install-btn" disabled>Add to Home Screen</button>
+          <p class="hint" id="install-hint"></p>
+        </div>
+
+        <div class="panel">
+          <h3>About</h3>
+          <p class="hint">Midnight Sonic stores everything — your songs, playlists, and settings — locally on this device. Nothing is uploaded anywhere.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ MINI PLAYER ============ -->
+  <div class="mini-player hidden" id="mini-player">
+    <div class="mini-progress" id="mini-progress"><div class="mini-progress-fill" id="mini-progress-fill"></div></div>
+    <div class="mini-art" id="mini-art"></div>
+    <div class="mini-info">
+      <p class="mini-title" id="mini-title">—</p>
+      <p class="mini-artist" id="mini-artist">—</p>
+    </div>
+    <button class="icon-btn" id="mini-play-btn" aria-label="Play/Pause"></button>
+    <button class="icon-btn" id="mini-next-btn" aria-label="Next"></button>
+  </div>
+
+  <!-- ============ BOTTOM NAV ============ -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-item active" data-nav="home">
+      <span class="nav-icon" data-icon="home"></span><span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" data-nav="library">
+      <span class="nav-icon" data-icon="library"></span><span class="nav-label">Library</span>
+    </button>
+    <button class="nav-item" data-nav="playlists">
+      <span class="nav-icon" data-icon="playlist"></span><span class="nav-label">Playlists</span>
+    </button>
+    <button class="nav-item" data-nav="settings">
+      <span class="nav-icon" data-icon="tune"></span><span class="nav-label">Audio</span>
+    </button>
+  </nav>
+
+  <!-- ============ FULL PLAYER ============ -->
+  <section class="full-player" id="full-player">
+    <header class="full-player-header">
+      <button class="icon-btn ic-chevron-down" id="player-collapse-btn" aria-label="Minimize"></button>
+      <div class="full-player-header-text">
+        <p class="eyebrow" id="player-context-label">Playing</p>
+      </div>
+      <button class="icon-btn ic-more" id="player-menu-btn" aria-label="More"></button>
+    </header>
+
+    <div class="full-player-body">
+      <div class="artwork-wrap">
+        <div class="artwork" id="player-artwork"></div>
+      </div>
+
+      <div class="track-info">
+        <div class="track-info-text">
+          <h2 id="player-title">—</h2>
+          <p id="player-artist">—</p>
+        </div>
+        <button class="icon-btn like-btn" id="player-like-btn" aria-label="Like"></button>
+      </div>
+
+      <div class="progress-wrap">
+        <input type="range" id="player-seek" min="0" max="100" value="0" step="0.1" />
+        <div class="time-row">
+          <span id="player-time-current">0:00</span>
+          <span id="player-time-remaining">-0:00</span>
+        </div>
+      </div>
+
+      <div class="transport-row">
+        <button class="icon-btn transport-sm" id="player-shuffle-btn" aria-label="Shuffle"></button>
+        <button class="icon-btn transport-md" id="player-prev-btn" aria-label="Previous"></button>
+        <button class="play-btn-lg" id="player-play-btn" aria-label="Play"></button>
+        <button class="icon-btn transport-md" id="player-next-btn" aria-label="Next"></button>
+        <button class="icon-btn transport-sm" id="player-repeat-btn" aria-label="Repeat"></button>
+      </div>
+
+      <div class="player-footer-row">
+        <button class="chip-btn" id="player-queue-btn">Queue</button>
+        <div class="volume-inline">
+          <span class="mini-icon" data-icon="volume"></span>
+          <input type="range" id="player-volume" min="0" max="1" step="0.01" value="1" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUEUE SHEET ============ -->
+  <div class="sheet hidden" id="queue-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <h3>Queue</h3>
+      <button class="btn-text" id="queue-clear-btn">Clear</button>
+    </div>
+    <div class="sheet-body" id="queue-list"></div>
+  </div>
+
+  <!-- ============ SONG CONTEXT SHEET ============ -->
+  <div class="sheet hidden" id="context-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-song-info">
+      <div class="sheet-art" id="context-art"></div>
+      <div>
+        <p class="sheet-song-title" id="context-title">—</p>
+        <p class="sheet-song-artist" id="context-artist">—</p>
+      </div>
+    </div>
+    <div class="sheet-menu">
+      <button class="sheet-menu-item" data-ctx="play">Play</button>
+      <button class="sheet-menu-item" data-ctx="play-next">Play next</button>
+      <button class="sheet-menu-item" data-ctx="add-queue">Add to queue</button>
+      <button class="sheet-menu-item" data-ctx="add-playlist">Add to playlist</button>
+      <button class="sheet-menu-item" data-ctx="like">Like</button>
+      <button class="sheet-menu-item" data-ctx="view-album">View album</button>
+      <button class="sheet-menu-item" data-ctx="view-artist">View artist</button>
+      <button class="sheet-menu-item danger" data-ctx="remove-library">Remove from library</button>
+      <button class="sheet-menu-item danger hidden" data-ctx="remove-playlist">Remove from this playlist</button>
+    </div>
+  </div>
+
+  <!-- ============ ADD TO PLAYLIST SHEET ============ -->
+  <div class="sheet hidden" id="add-to-playlist-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <h3>Add to playlist</h3>
+      <button class="btn-text" id="add-playlist-new-btn">New</button>
+    </div>
+    <div class="sheet-body" id="add-to-playlist-list"></div>
+  </div>
+
+  <!-- ============ TEXT INPUT MODAL (new/rename playlist) ============ -->
+  <div class="modal hidden" id="text-input-modal">
+    <div class="modal-card">
+      <h3 id="text-input-title">New Playlist</h3>
+      <input type="text" id="text-input-field" maxlength="80" placeholder="Playlist name" />
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="text-input-cancel">Cancel</button>
+        <button class="btn btn-primary" id="text-input-confirm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRM MODAL ============ -->
+  <div class="modal hidden" id="confirm-modal">
+    <div class="modal-card">
+      <h3 id="confirm-title">Are you sure?</h3>
+      <p id="confirm-message" class="hint"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="confirm-cancel">Cancel</button>
+        <button class="btn btn-danger" id="confirm-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ IMPORT PROGRESS ============ -->
+  <div class="import-progress hidden" id="import-progress">
+    <div class="import-progress-head">
+      <span id="import-progress-title">Importing…</span>
+      <span id="import-progress-count">0 / 0</span>
+    </div>
+    <div class="import-progress-bar"><div class="import-progress-fill" id="import-progress-fill"></div></div>
+  </div>
+
+  <!-- ============ TOASTS ============ -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <div class="backdrop hidden" id="backdrop"></div>
+
+</div>
+
+<input type="file" id="music-upload" accept="audio/*,.flac" multiple hidden />
+
+<script src="db.js"></script>
+<script src="meta.js"></script>
+<script src="player.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
